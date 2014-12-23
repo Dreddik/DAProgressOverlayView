@@ -3,7 +3,7 @@ DAProgressOverlayView
 
 A UIView subclass displaying download progress. Looks similarly to springboard icons of apps being downloaded in iOS 7.
 
-[![Video example](http://img.youtube.com/vi/T-D1KVIuvjA/0.jpg)](DAProgressExample.mov)
+![Animated example](DAProgressExample.gif)
 
 Installing
 =====================
