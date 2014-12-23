@@ -22,7 +22,9 @@
 @end
 
 
-@implementation DAViewController
+@implementation DAViewController {
+    CGFloat currentProgress;
+}
 
 - (void)viewDidLoad
 {
@@ -38,28 +40,29 @@
     self.downloadButton.enabled = NO;
     [self.downloadButton setTitle:@"Downloading..." forState:UIControlStateNormal];
     [self.progressOverlayView displayOperationWillTriggerAnimation];
-    double delayInSeconds = self.progressOverlayView.stateChangeAnimationDuration;
-    dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
-    dispatch_after(popTime, dispatch_get_main_queue(), ^(void) {
-        self.timer = [NSTimer scheduledTimerWithTimeInterval:0.02 target:self selector:@selector(updateProgress) userInfo:nil repeats:YES];
+    self.progressOverlayView.progress = currentProgress = 0;
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(self.progressOverlayView.beginAnimationDuration * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        self.timer = [NSTimer scheduledTimerWithTimeInterval:0.02 target:self selector:@selector(updateProgress) userInfo:nil repeats:YES];    
     });
+    
+    __weak DAViewController *wself = self;
+    [self.progressOverlayView setAnimationCompletionHandler:^(DAProgressOverlayAnimationType type) {
+        if (type == DAProgressOverlayAnimationFinish) {
+            [wself.downloadButton setTitle:@"Download" forState:UIControlStateNormal];
+            wself.downloadButton.enabled = YES;
+            [wself.progressOverlayView removeFromSuperview];
+            wself.progressOverlayView = nil;
+        }
+    }];
 }
 
 - (void)updateProgress
 {
-    CGFloat progress = self.progressOverlayView.progress + 0.01;
+    CGFloat progress = currentProgress += 0.01;
     if (progress >= 1) {
         [self.timer invalidate];
         self.progressOverlayView.progress = 1.0f;
         [self.progressOverlayView displayOperationDidFinishAnimation];
-        double delayInSeconds = self.progressOverlayView.stateChangeAnimationDuration;
-        dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
-        dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
-            self.progressOverlayView.progress = 0.;
-            [self.downloadButton setTitle:@"Download" forState:UIControlStateNormal];
-            self.progressOverlayView.hidden = YES;
-            self.downloadButton.enabled = YES;
-        });
     } else {
         self.progressOverlayView.progress = progress;
     }

@@ -16,8 +16,8 @@ typedef enum {
 } DAProgressOverlayViewState;
 
 @interface DAProgressOverlayView ()
-
-@property (strong, nonatomic) NSTimer *timer;
+@property (strong, nonatomic) CABasicAnimation *startAnimation;
+@property (assign, nonatomic) CGFloat pendingProgress;
 @end
 
 @interface DAProgressOverlayLayer : CALayer
@@ -125,7 +125,7 @@ typedef enum {
     if (self.view.progress < 1.) {
         CGFloat angle = 360. - (360. * self.view.progress);
         CGAffineTransform transform = CGAffineTransformMakeRotation(M_PI_2);
-        CGMutablePathRef path2 = CGPathCreateMutable();
+        CGMutablePathRef path2      = CGPathCreateMutable();
         CGPathMoveToPoint(path2, &transform, innerRadius, 0.);
         CGPathAddArc(path2, &transform, 0., 0., innerRadius, 0., angle / 180. * M_PI, 0.);
         CGPathAddLineToPoint(path2, &transform, 0., 0.);
@@ -176,35 +176,46 @@ typedef enum {
     self.innerRadiusRatio = 0.6;
     self.overlayColor = [UIColor colorWithRed:0. green:0. blue:0. alpha:0.5];
     self.dlayer.animationProgress = 0.;
-    self.stateChangeAnimationDuration = 0.4;
     self.triggersDownloadDidFinishAnimationAutomatically = YES;
 }
 #pragma mark - Public
 
+- (CABasicAnimation *) makeProgressAnimation:(CGFloat) duration {
+    CABasicAnimation *animation = [CABasicAnimation animationWithKeyPath:@"animationProgress"];
+    animation.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseInEaseOut];
+    animation.duration  = duration;
+    animation.fromValue = @(0);
+    animation.toValue   = @(1);
+    animation.delegate  = self;
+    [self.layer addAnimation:animation forKey:@"makeAnimationFinish"];
+    return animation;
+}
+
 - (void)displayOperationDidFinishAnimation
 {
     self.dlayer.state = DAProgressOverlayViewStateOperationFinished;
-    
-    CABasicAnimation *animation = [CABasicAnimation animationWithKeyPath:@"animationProgress"];
-    animation.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseInEaseOut];
-    animation.duration = .4f;
-    animation.fromValue = @(0);
-    animation.toValue   = @(1);
-    [self.layer addAnimation:animation forKey:@"makeAnimationProgress"];
-    self.dlayer.animationProgress = 1.0f;
+    [self makeProgressAnimation:self.finishAnimationDuration];
+    self.dlayer.animationProgress = 1.0f; //For successfull drawing animation finish
 }
 
 - (void)displayOperationWillTriggerAnimation
 {
-    self.dlayer.state = DAProgressOverlayViewStateWaiting;
-    
-    CABasicAnimation *animation = [CABasicAnimation animationWithKeyPath:@"animationProgress"];
-    animation.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseInEaseOut];
-    animation.duration  = 1.f / 3.f;
-    animation.fromValue = @(0);
-    animation.toValue   = @(1);
-    [self.layer addAnimation:animation forKey:@"makeAnimationProgress"];
-    self.dlayer.animationProgress = 1.0f;
+    self.dlayer.state   = DAProgressOverlayViewStateWaiting;
+    self.startAnimation = [self makeProgressAnimation:self.beginAnimationDuration];
+    self.dlayer.animationProgress = 1.0f; //For successfull drawing animation finish
+}
+- (void)animationDidStop:(CAAnimation *)anim finished:(BOOL)flag {
+    if (!flag) return;
+    if (self.startAnimation) {
+        self.startAnimation = nil;
+        self.progress = _pendingProgress;
+        if (self.animationCompletionHandler) {
+            self.animationCompletionHandler(DAProgressOverlayAnimationBegin);
+        }
+    } else if (self.animationCompletionHandler) {
+        self.animationCompletionHandler(DAProgressOverlayAnimationFinish);
+        [self removeFromSuperview];
+    }
 }
 
 #pragma mark * Overwritten methods
@@ -221,6 +232,10 @@ typedef enum {
 
 - (void)setProgress:(CGFloat)progress
 {
+    if (self.startAnimation) {
+        _pendingProgress = progress;
+        return;
+    }
     if (_progress != progress) {
         _progress = (progress < 0.) ? 0. : (progress > 1.) ? 1. : progress;
         if (progress > 0. && progress < 1.) {
@@ -230,6 +245,13 @@ typedef enum {
             [self displayOperationDidFinishAnimation];
         }
     }
+}
+
+-(CGFloat)beginAnimationDuration {
+    return 1.f / 3.f;
+}
+-(CGFloat)finishAnimationDuration {
+    return .4f;
 }
 
 @end
