@@ -1,5 +1,5 @@
 Pod::Spec.new do |s|
-  s.name         = "DAProgressOverlayView"
+  s.name         = "DAProgressOverlayLayeredView"
   s.version      = "1.1"
   s.summary      = "A UIView subclass displaying download progress. Looks similarly to springboard icons of apps being downloaded in iOS 7. Layer-based version"
   s.homepage     = "https://github.com/Dreddik/DAProgressOverlayView.git"
