@@ -32,9 +32,9 @@ self.progressOverlayView.progress = progress;
 3) Catch animation finish:
 ```
 __weak DAViewController *wself = self;
-    [self.progressOverlayView setAnimationCompletionHandler:^(DAProgressOverlayAnimationType type) {
-        if (type == DAProgressOverlayAnimationFinish) {
-            wself.progressOverlayView = nil;
-        }
-    }];
+[self.progressOverlayView setAnimationCompletionHandler:^(DAProgressOverlayAnimationType type) {
+    if (type == DAProgressOverlayAnimationFinish) {
+        wself.progressOverlayView = nil;
+    }
+}];
 ```
