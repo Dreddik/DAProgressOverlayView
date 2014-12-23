@@ -50,6 +50,7 @@
     CGFloat progress = self.progressOverlayView.progress + 0.01;
     if (progress >= 1) {
         [self.timer invalidate];
+        self.progressOverlayView.progress = 1.0f;
         [self.progressOverlayView displayOperationDidFinishAnimation];
         double delayInSeconds = self.progressOverlayView.stateChangeAnimationDuration;
         dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
