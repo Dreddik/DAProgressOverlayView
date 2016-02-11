@@ -8,7 +8,7 @@ A UIView subclass displaying download progress. Looks similarly to springboard i
 Installing
 =====================
 
-You can install the library with Cocoapods
+You can install the library with CocoaPods
 ```
 platform :ios, '5.0'
 pod "DAProgressOverlayLayeredView"
